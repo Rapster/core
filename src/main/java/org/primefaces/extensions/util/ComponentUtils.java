@@ -20,6 +20,7 @@ package org.primefaces.extensions.util;
 
 import org.primefaces.component.api.AjaxSource;
 
+import javax.faces.FacesException;
 import javax.faces.component.EditableValueHolder;
 import javax.faces.component.UIComponent;
 import javax.faces.component.behavior.ClientBehavior;
@@ -27,6 +28,9 @@ import javax.faces.component.behavior.ClientBehaviorHolder;
 import javax.faces.context.FacesContext;
 import javax.faces.convert.Converter;
 import javax.faces.render.Renderer;
+import javax.faces.view.AttachedObjectTarget;
+import javax.faces.view.EditableValueHolderAttachedObjectTarget;
+import java.beans.BeanInfo;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -189,5 +193,29 @@ public class ComponentUtils extends org.primefaces.util.ComponentUtils {
         } else {
             return TimeZone.getDefault();
         }
+    }
+
+    public static UIComponent closestEditableValueHolderTarget(UIComponent component, FacesContext fc) {
+        UIComponent closest = component;
+
+        if (UIComponent.isCompositeComponent(component)) {
+            BeanInfo info = (BeanInfo) component.getAttributes().get(UIComponent.BEANINFO_KEY);
+            List<AttachedObjectTarget> targets = (List<AttachedObjectTarget>) info.getBeanDescriptor()
+                    .getValue(AttachedObjectTarget.ATTACHED_OBJECT_TARGETS_KEY);
+
+            for (AttachedObjectTarget target : targets) {
+                if (target instanceof EditableValueHolderAttachedObjectTarget) {
+                    UIComponent children = component.findComponent(target.getName());
+                    if (children == null) {
+                        throw new FacesException(
+                                "Cannot find editableValueHolder with name: \"" + target.getName() + "\"");
+                    }
+                    closest = closestEditableValueHolderTarget(children, fc);
+                    break;
+                }
+            }
+        }
+
+        return closest;
     }
 }
