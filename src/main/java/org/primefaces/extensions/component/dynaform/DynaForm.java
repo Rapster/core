@@ -15,9 +15,7 @@
  */
 package org.primefaces.extensions.component.dynaform;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.faces.FacesException;
 import javax.faces.application.ResourceDependencies;
@@ -25,6 +23,8 @@ import javax.faces.application.ResourceDependency;
 import javax.faces.component.ContextCallback;
 import javax.faces.component.UIComponent;
 import javax.faces.component.UINamingContainer;
+import javax.faces.component.behavior.ClientBehavior;
+import javax.faces.component.behavior.ClientBehaviorHolder;
 import javax.faces.component.visit.VisitCallback;
 import javax.faces.component.visit.VisitContext;
 import javax.faces.context.FacesContext;
@@ -51,13 +51,24 @@ import org.primefaces.util.ComponentUtils;
             @ResourceDependency(library = "primefaces-extensions", name = "primefaces-extensions.css"),
             @ResourceDependency(library = "primefaces-extensions", name = "primefaces-extensions.js")
 })
-public class DynaForm extends AbstractDynamicData implements Widget {
+public class DynaForm extends AbstractDynamicData implements Widget, ClientBehaviorHolder {
 
     public static final String COMPONENT_TYPE = "org.primefaces.extensions.component.DynaForm";
     public static final String COMPONENT_FAMILY = "org.primefaces.extensions.component";
     private static final String DEFAULT_RENDERER = "org.primefaces.extensions.component.DynaFormRenderer";
 
     private Map<String, UIDynaFormControl> cells;
+    private DynaBehaviorMap behaviors;
+
+    // Used to fool over-eager tag handlers that check in advance whether a given component indeed
+    // supports the event for which a behavior is attached.
+    private List<String> containsTrueList = new ArrayList<String>() {
+        private static final long serialVersionUID = 1L;
+        @Override
+        public boolean contains(Object o) {
+            return true;
+        }
+    };
 
     /**
      * Properties that are tracked by state saving.
@@ -68,7 +79,7 @@ public class DynaForm extends AbstractDynamicData implements Widget {
     protected enum PropertyKeys {
 
         widgetVar, autoSubmit, openExtended, buttonBarPosition, // top, bottom, both
-        style, styleClass, columnClasses;
+        style, styleClass, columnClasses, controlKey;
 
         private String toString;
 
@@ -144,6 +155,14 @@ public class DynaForm extends AbstractDynamicData implements Widget {
 
     public void setColumnClasses(java.lang.String columnClasses) {
         getStateHelper().put(PropertyKeys.columnClasses, columnClasses);
+    }
+
+    public void setControlKey(final String controlKey) {
+        getStateHelper().put(PropertyKeys.controlKey, controlKey);
+    }
+
+    public String getControlKey() {
+        return (String) getStateHelper().eval(PropertyKeys.controlKey, null);
     }
 
     public java.lang.String getColumnClasses() {
@@ -338,5 +357,30 @@ public class DynaForm extends AbstractDynamicData implements Widget {
         }
 
         return false;
+    }
+
+    @Override
+    public void addClientBehavior(String eventName, ClientBehavior behavior) {
+        if (behaviors == null) {
+            behaviors = new DynaBehaviorMap();
+        }
+
+        behaviors.add(eventName, behavior);
+    }
+
+    @Override
+    public Map<String, List<ClientBehavior>> getClientBehaviors() {
+        if (behaviors == null) {
+            return Collections.emptyMap();
+        }
+        return behaviors;
+    }
+
+    @Override
+    public Collection<String> getEventNames() {
+        if (behaviors == null) {
+            return containsTrueList;
+        }
+        return behaviors.keySet();
     }
 }

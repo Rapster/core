@@ -15,35 +15,27 @@
  */
 package org.primefaces.extensions.component.base;
 
-import java.util.Map;
-
-import javax.faces.FacesException;
-import javax.faces.application.Application;
-import javax.faces.application.FacesMessage;
-import javax.faces.component.ContextCallback;
-import javax.faces.component.EditableValueHolder;
-import javax.faces.component.NamingContainer;
-import javax.faces.component.UIComponent;
-import javax.faces.component.UIComponentBase;
-import javax.faces.component.UINamingContainer;
-import javax.faces.component.UIViewRoot;
-import javax.faces.component.UniqueIdVendor;
-import javax.faces.component.visit.VisitCallback;
-import javax.faces.component.visit.VisitContext;
-import javax.faces.component.visit.VisitResult;
-import javax.faces.context.FacesContext;
-import javax.faces.event.AbortProcessingException;
-import javax.faces.event.FacesEvent;
-import javax.faces.event.PhaseId;
-import javax.faces.event.PostValidateEvent;
-import javax.faces.event.PreValidateEvent;
-import javax.faces.render.Renderer;
-
 import org.primefaces.component.api.UITabPanel;
+import org.primefaces.extensions.behavior.dynaform.DynaAjaxBehavior;
 import org.primefaces.extensions.event.EventDataWrapper;
 import org.primefaces.extensions.model.common.KeyData;
 import org.primefaces.extensions.util.SavedEditableValueState;
 import org.primefaces.util.ComponentTraversalUtils;
+
+import javax.faces.FacesException;
+import javax.faces.application.Application;
+import javax.faces.application.FacesMessage;
+import javax.faces.component.*;
+import javax.faces.component.behavior.ClientBehavior;
+import javax.faces.component.behavior.ClientBehaviorHolder;
+import javax.faces.component.visit.VisitCallback;
+import javax.faces.component.visit.VisitContext;
+import javax.faces.component.visit.VisitResult;
+import javax.faces.context.FacesContext;
+import javax.faces.event.*;
+import javax.faces.render.Renderer;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Abstract base class for all components with dynamic behavior like UIData.
@@ -197,7 +189,7 @@ public abstract class AbstractDynamicData extends UIComponentBase implements Nam
                     id = viewRoot.createUniqueId(context, null);
                 }
                 else {
-                    throw new FacesException("Cannot create clientId for " + this.getClass().getCanonicalName());
+                    throw new FacesException("Cannot create clientId for " + getClass().getCanonicalName());
                 }
             }
             else {
@@ -242,7 +234,7 @@ public abstract class AbstractDynamicData extends UIComponentBase implements Nam
 
     @Override
     public String getContainerClientId(final FacesContext context) {
-        final String clientId = this.getClientId(context);
+        final String clientId = getClientId(context);
 
         final KeyData data = getData();
         final String key = data != null ? data.getKey() : null;
@@ -461,7 +453,7 @@ public abstract class AbstractDynamicData extends UIComponentBase implements Nam
             }
 
             // skip if the component is not a children
-            if (!clientId.startsWith(this.getClientId(context))) {
+            if (!clientId.startsWith(getClientId(context))) {
                 return false;
             }
 
@@ -574,6 +566,9 @@ public abstract class AbstractDynamicData extends UIComponentBase implements Nam
             state.setLocalValueSet(input.isLocalValueSet());
             state.setLabelValue(((UIComponent) input).getAttributes().get("label"));
 
+            if (component instanceof ClientBehaviorHolder) {
+                state.setBehaviors(((ClientBehaviorHolder) component).getClientBehaviors());
+            }
             //currently we can't save/restore the disabled: See #571 #644
             //we also can't change it easily as the var is not not exposed at this time; it would need some refactoring
             /*
@@ -620,6 +615,17 @@ public abstract class AbstractDynamicData extends UIComponentBase implements Nam
             input.setLocalValueSet(state.isLocalValueSet());
             if (state.getLabelValue() != null) {
                 ((UIComponent) input).getAttributes().put("label", state.getLabelValue());
+            }
+
+            if (input instanceof ClientBehaviorHolder) {
+                for(Map.Entry<String, List<ClientBehavior>> entry : state.getBehaviors().entrySet()) {
+                    List<ClientBehavior> behaviors = ((ClientBehaviorHolder) input).getClientBehaviors().get(entry.getKey());
+                    for (ClientBehavior b : entry.getValue()) {
+                        if (b instanceof DynaAjaxBehavior && (behaviors == null || !behaviors.contains(b))) {
+                            ((ClientBehaviorHolder) input).addClientBehavior(entry.getKey(), b);
+                        }
+                    }
+                }
             }
 
             //currently we can't save/restore the disabled: See #571 #644

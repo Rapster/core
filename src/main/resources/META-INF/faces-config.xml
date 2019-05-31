@@ -26,6 +26,11 @@
         <behavior-class>org.primefaces.extensions.behavior.javascript.JavascriptBehavior</behavior-class>
     </behavior>
 
+    <behavior>
+        <behavior-id>org.primefaces.extensions.dynaform.DynaAjaxBehavior</behavior-id>
+        <behavior-class>org.primefaces.extensions.behavior.dynaform.DynaAjaxBehavior</behavior-class>
+    </behavior>
+
     <component>
         <component-type>org.primefaces.extensions.component.Calculator</component-type>
         <component-class>org.primefaces.extensions.component.calculator.Calculator</component-class>

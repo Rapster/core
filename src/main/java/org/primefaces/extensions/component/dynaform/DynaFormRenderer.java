@@ -15,30 +15,29 @@
  */
 package org.primefaces.extensions.component.dynaform;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.logging.Logger;
-
-import javax.faces.component.ContextCallback;
-import javax.faces.component.EditableValueHolder;
-import javax.faces.component.UIComponent;
-import javax.faces.context.FacesContext;
-import javax.faces.context.ResponseWriter;
-
 import org.apache.commons.lang3.StringUtils;
 import org.primefaces.component.api.InputHolder;
 import org.primefaces.component.row.Row;
-import org.primefaces.extensions.model.dynaform.AbstractDynaFormElement;
-import org.primefaces.extensions.model.dynaform.DynaFormControl;
-import org.primefaces.extensions.model.dynaform.DynaFormLabel;
-import org.primefaces.extensions.model.dynaform.DynaFormModel;
-import org.primefaces.extensions.model.dynaform.DynaFormModelElement;
-import org.primefaces.extensions.model.dynaform.DynaFormRow;
+import org.primefaces.extensions.behavior.dynaform.DynaAjaxBehavior;
+import org.primefaces.extensions.model.dynaform.*;
 import org.primefaces.renderkit.CoreRenderer;
 import org.primefaces.util.CompositeUtils;
 import org.primefaces.util.Constants;
 import org.primefaces.util.WidgetBuilder;
+
+import javax.faces.component.ContextCallback;
+import javax.faces.component.EditableValueHolder;
+import javax.faces.component.UIComponent;
+import javax.faces.component.behavior.ClientBehavior;
+import javax.faces.component.behavior.ClientBehaviorHolder;
+import javax.faces.context.FacesContext;
+import javax.faces.context.ResponseWriter;
+import javax.faces.view.AttachedObjectTarget;
+import javax.faces.view.BehaviorHolderAttachedObjectTarget;
+import java.beans.BeanInfo;
+import java.io.IOException;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Renderer for {@link DynaForm} component.
@@ -279,6 +278,11 @@ public class DynaFormRenderer extends CoreRenderer {
 
         // find control's cell by type
         final UIDynaFormControl cell = dynaForm.getControlCell(control.getType());
+        final UIComponent target = cell.findComponent(cell.getFor());
+
+        if (target != null && !dynaForm.getEventNames().isEmpty()) {
+            addClientBehaviors(dynaForm, target);
+        }
 
         if (cell.getStyle() != null) {
             writer.writeAttribute("style", cell.getStyle(), null);
@@ -292,6 +296,43 @@ public class DynaFormRenderer extends CoreRenderer {
         writer.writeAttribute("role", GRID_CELL_ROLE, null);
 
         cell.encodeAll(fc);
+    }
+
+    protected void addClientBehaviors(DynaForm dynaForm, UIComponent target) {
+        if (CompositeUtils.isComposite(target)) {
+            BeanInfo info = (BeanInfo) target.getAttributes().get(UIComponent.BEANINFO_KEY);
+            List<AttachedObjectTarget> targets = (List<AttachedObjectTarget>) info.getBeanDescriptor()
+                    .getValue(AttachedObjectTarget.ATTACHED_OBJECT_TARGETS_KEY);
+            for (AttachedObjectTarget a : targets) {
+                if (!(a instanceof BehaviorHolderAttachedObjectTarget)) {
+                    continue;
+                }
+
+                for (UIComponent child : a.getTargets(target)) {
+                    addClientBehaviors(dynaForm, child);
+                }
+            }
+        }
+        else {
+            Collection<String> eventNames;
+            if (!(target instanceof ClientBehaviorHolder)
+                    || (eventNames = ((ClientBehaviorHolder) target).getEventNames()).isEmpty()) {
+                return;
+            }
+
+            for (Map.Entry<String, List<ClientBehavior>> bs : dynaForm.getClientBehaviors().entrySet()) {
+                if (!eventNames.contains(bs.getKey())) {
+                    continue;
+                }
+
+                for (ClientBehavior b : bs.getValue()) {
+                    if (b instanceof DynaAjaxBehavior
+                            && Objects.equals(dynaForm.getControlKey(), ((DynaAjaxBehavior) b).getFor())) {
+                        ((ClientBehaviorHolder) target).addClientBehavior(bs.getKey(), b);
+                    }
+                }
+            }
+        }
     }
 
     protected void renderLabel(ResponseWriter writer, String labelCommonClass, DynaFormLabel element, String styleClass) throws IOException {
@@ -464,4 +505,5 @@ public class DynaFormRenderer extends CoreRenderer {
     public boolean getRendersChildren() {
         return true;
     }
+
 }

@@ -6822,5 +6822,11 @@ See showcase for an example. Default null.]]>
             <type>java.lang.String</type>
         </attribute>
     </tag>
-
+    <tag>
+        <tag-name>dynaAjax</tag-name>
+        <behavior>
+            <behavior-id>org.primefaces.extensions.dynaform.DynaAjaxBehavior</behavior-id>
+            <handler-class>org.primefaces.extensions.behavior.dynaform.DynaAjaxBehaviorHandler</handler-class>
+        </behavior>
+    </tag>
 </facelet-taglib>

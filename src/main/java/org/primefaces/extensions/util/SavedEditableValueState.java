@@ -17,6 +17,9 @@ package org.primefaces.extensions.util;
 
 import org.primefaces.component.api.SavedState;
 
+import javax.faces.component.behavior.ClientBehavior;
+import java.util.*;
+
 /**
  * Keeps state of a component implementing {@link javax.faces.component.EditableValueHolder}. This class is used in
  * {@link org.primefaces.extensions.component.base.AbstractDynamicData}.
@@ -32,6 +35,8 @@ public class SavedEditableValueState extends SavedState {
     private Object labelValue;
 
     private Object disabled;
+
+    private Map<String, List<ClientBehavior>> behaviors;
 
     public void reset() {
         setSubmittedValue(null);
@@ -54,5 +59,22 @@ public class SavedEditableValueState extends SavedState {
 
     public void setDisabled(Object disabled) {
         this.disabled = disabled;
+    }
+
+    public Map<String, List<ClientBehavior>> getBehaviors() {
+        if (behaviors == null) {
+            return Collections.emptyMap();
+        }
+        return behaviors;
+    }
+
+    public void setBehaviors(Map<String, List<ClientBehavior>> behaviors) {
+        this.behaviors = new HashMap<>();
+
+        for (Map.Entry<String, List<ClientBehavior>> entry : behaviors.entrySet()) {
+            this.behaviors.put(entry.getKey(), Collections.unmodifiableList(new ArrayList<>(entry.getValue())));
+        }
+
+        this.behaviors = Collections.unmodifiableMap(this.behaviors);
     }
 }
