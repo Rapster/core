@@ -15,7 +15,12 @@
  */
 package org.primefaces.extensions.component.dynaform;
 
-import java.util.*;
+import org.primefaces.component.api.Widget;
+import org.primefaces.extensions.component.base.AbstractDynamicData;
+import org.primefaces.extensions.model.common.KeyData;
+import org.primefaces.extensions.model.dynaform.DynaFormControl;
+import org.primefaces.extensions.model.dynaform.DynaFormModel;
+import org.primefaces.util.ComponentUtils;
 
 import javax.faces.FacesException;
 import javax.faces.application.ResourceDependencies;
@@ -29,13 +34,7 @@ import javax.faces.component.visit.VisitCallback;
 import javax.faces.component.visit.VisitContext;
 import javax.faces.context.FacesContext;
 import javax.faces.event.PhaseId;
-
-import org.primefaces.component.api.Widget;
-import org.primefaces.extensions.component.base.AbstractDynamicData;
-import org.primefaces.extensions.model.common.KeyData;
-import org.primefaces.extensions.model.dynaform.DynaFormControl;
-import org.primefaces.extensions.model.dynaform.DynaFormModel;
-import org.primefaces.util.ComponentUtils;
+import java.util.*;
 
 /**
  * <code>DynaForm</code> component.
@@ -58,7 +57,6 @@ public class DynaForm extends AbstractDynamicData implements Widget, ClientBehav
     private static final String DEFAULT_RENDERER = "org.primefaces.extensions.component.DynaFormRenderer";
 
     private Map<String, UIDynaFormControl> cells;
-    private DynaBehaviorMap behaviors;
 
     // Used to fool over-eager tag handlers that check in advance whether a given component indeed
     // supports the event for which a behavior is attached.
@@ -169,6 +167,7 @@ public class DynaForm extends AbstractDynamicData implements Widget, ClientBehav
         return (java.lang.String) getStateHelper().eval(PropertyKeys.columnClasses, null);
     }
 
+    @Override
     public String resolveWidgetVar() {
         return ComponentUtils.resolveWidgetVar(getFacesContext(), this);
     }
@@ -186,7 +185,7 @@ public class DynaForm extends AbstractDynamicData implements Widget, ClientBehav
 
     protected Map<String, UIDynaFormControl> getControlCells() {
         if (cells == null) {
-            cells = new HashMap<String, UIDynaFormControl>();
+            cells = new HashMap<>();
             for (UIComponent child : getChildren()) {
                 if (child instanceof UIDynaFormControl) {
                     UIDynaFormControl dynaFormCell = (UIDynaFormControl) child;
@@ -270,7 +269,7 @@ public class DynaForm extends AbstractDynamicData implements Widget, ClientBehav
             throw new FacesException("Value in DynaForm must be of type DynaFormModel");
         }
 
-        if (this.getChildCount() > 0) {
+        if (getChildCount() > 0) {
             // extract the dynaFormControl key from the clientId
             // it's simliar to rowKey in UIData
             String key = clientId.substring(getClientId().length() + 1);
@@ -360,25 +359,9 @@ public class DynaForm extends AbstractDynamicData implements Widget, ClientBehav
     }
 
     @Override
-    public void addClientBehavior(String eventName, ClientBehavior behavior) {
-        if (behaviors == null) {
-            behaviors = new DynaBehaviorMap();
-        }
-
-        behaviors.add(eventName, behavior);
-    }
-
-    @Override
-    public Map<String, List<ClientBehavior>> getClientBehaviors() {
-        if (behaviors == null) {
-            return Collections.emptyMap();
-        }
-        return behaviors;
-    }
-
-    @Override
     public Collection<String> getEventNames() {
-        if (behaviors == null) {
+        Map<String, List<ClientBehavior>> behaviors = getClientBehaviors();
+        if (behaviors == null || behaviors.isEmpty()) {
             return containsTrueList;
         }
         return behaviors.keySet();
