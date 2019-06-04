@@ -4,6 +4,8 @@ import org.primefaces.behavior.ajax.AjaxBehavior;
 
 public class DynaAjaxBehavior extends AjaxBehavior {
 
+    public static final String BEHAVIOR_ID = "org.primefaces.extensions.dynaform.DynaAjaxBehavior";
+
     public enum PropertyKeys {
         forx(String.class, "for");
 

@@ -66,7 +66,7 @@ public class DynaAjaxBehaviorHandler extends AbstractBehaviorHandler<DynaAjaxBeh
     @Override
     protected DynaAjaxBehavior createBehavior(FaceletContext ctx, String eventName, UIComponent parent) {
         Application application = ctx.getFacesContext().getApplication();
-        DynaAjaxBehavior behavior = (DynaAjaxBehavior) application.createBehavior("org.primefaces.extensions.dynaform.DynaAjaxBehavior");
+        DynaAjaxBehavior behavior = (DynaAjaxBehavior) application.createBehavior(DynaAjaxBehavior.BEHAVIOR_ID);
         setBehaviorAttribute(ctx, behavior, process, AjaxBehavior.PropertyKeys.process.getExpectedType());
         setBehaviorAttribute(ctx, behavior, update, AjaxBehavior.PropertyKeys.update.getExpectedType());
         setBehaviorAttribute(ctx, behavior, onstart, AjaxBehavior.PropertyKeys.onstart.getExpectedType());

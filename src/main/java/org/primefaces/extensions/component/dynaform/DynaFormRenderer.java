@@ -278,10 +278,12 @@ public class DynaFormRenderer extends CoreRenderer {
 
         // find control's cell by type
         final UIDynaFormControl cell = dynaForm.getControlCell(control.getType());
-        final UIComponent target = cell.findComponent(cell.getFor());
 
-        if (target != null && !dynaForm.getEventNames().isEmpty()) {
-            addClientBehaviors(dynaForm, target);
+        if (cell.getFor() != null && !dynaForm.getEventNames().isEmpty()) {
+            final UIComponent target = cell.findComponent(cell.getFor());
+            if (target != null ) {
+                addClientBehaviors(dynaForm, target);
+            }
         }
 
         if (cell.getStyle() != null) {
